@@ -1,0 +1,31 @@
+{% extends "admin/base_site.html" %}
+{% block content %}
+<div style="float:right;">
+  <a href="/admin/glosses/download">Download the script to download videos</a>
+</div>
+<h1>Glosses</h1>
+<table>
+  <thead>
+  <tr>
+    <td>Text</td>
+    <td>Statistic</td>
+    <td>Operations</td>
+  </tr>
+  </thead>
+  <tbody>
+  {% for g in glosses %}
+  <tr>
+    <td>{{ g.text }}</td>
+    <td>
+      Approved: {{ g.approved_video_count }},
+      Rejected: {{ g.rejected_video_count }},
+      Total: {{ g.approved_video_count|add:g.rejected_video_count|add:g.pending_approval_video_count}}
+    </td>
+    <td>
+      <a href="/admin/glosses/{{g.id}}/video_list">Videos</a>
+    </td>
+  </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

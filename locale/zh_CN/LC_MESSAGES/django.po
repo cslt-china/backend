@@ -1,0 +1,40 @@
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_CN\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+
+msgid "Token is invalid or expired"
+msgstr "票据非法或已过期"
+
+
+msgid "No permission to upload this video"
+msgstr "没有上传此视频的权限"
+
+
+msgid "Invalid upload, The video has been forbidden/deleted"
+msgstr "非法上传，该视频已经被禁止访问或删除"
+
+
+msgid "Error occurred"
+msgstr "发生错误"
+
+
+msgid "The uploaded file is not supported"
+msgstr "上传的文件不被支持"
+
+
+msgid "User cannot vote self video"
+msgstr "用户不能评价自己的视频"
+
+
+msgid "Forbid voting a smaple video"
+msgstr "无法评价示例视频"
+
+msgid "Wrong old password"
+msgstr "原密码错误"
+
+msgid "Too many pending approval videos"
+msgstr "待评审视频过多"

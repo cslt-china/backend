@@ -1,0 +1,2 @@
+msgid "Token is invalid or expired"
+msgstr "Token is invalid or expired"

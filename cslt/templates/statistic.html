@@ -1,0 +1,67 @@
+{% extends "admin/base_site.html" %}
+{% block content %}
+<h1>User's video statistic</h1>
+<table>
+  <thead>
+  <tr>
+    <th>Username</th>
+    <th>Pending count</th>
+    <th>Approved count</th>
+    <th>Rejected count</th>
+    <th>Video total count</th>
+  </tr>
+  </thead>
+  <tbody>
+  {% for o in user_stats %}
+    <tr>
+      <td>{{ o.username }}</td>
+      <td>{{ o.pending_count }}</td>
+      <td>{{ o.approved_count }}</td>
+      <td>{{ o.rejected_count }}</td>
+      <td>{{ o.total_count }}</td>
+    </tr>
+{% endfor %}
+  </tbody>
+</table>
+<h1>Video daily statistic</h1>
+<table>
+  <thead>
+  <tr>
+    <th>Date</th>
+    <th>Count</th>
+  </tr>
+  </thead>
+  <tbody>
+  {% for o in daily_stats %}
+    <tr>
+      <td>{{ o.date }}</td>
+      <td>{{ o.count }}</td>
+    </tr>
+{% endfor %}
+  </tbody>
+</table>
+<h1>User's score statistic</h1>
+<table>
+  <thead>
+  <tr>
+    <th>Username</th>
+    <th>Created video score</th>
+    <th>Approved video score</th>
+    <th>Review video score</th>
+    <th>Total score</th>
+  </tr>
+  </thead>
+  <tbody>
+  {% for o in score_stats %}
+    <tr>
+      <td>{{ o.username }}</td>
+      <td>{{ o.created_video_score }}</td>
+      <td>{{ o.approved_video_score }}</td>
+      <td>{{ o.review_video_score }}</td>
+      <td>{{ o.total_score }}</td>
+    </tr>
+{% endfor %}
+  </tbody>
+</table>
+
+{% endblock %}

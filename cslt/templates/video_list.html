@@ -1,0 +1,28 @@
+{% extends "admin/base_site.html" %}
+{% block content %}
+<div style="float:right;">
+  <a href="/admin/glosses/{{gloss_id}}/download">Download the script to download videos</a>
+</div>
+{% for k, v in videos.items %}
+<h1>{{ k }}</h1>
+<table>
+  <thead>
+  <tr>
+    <td>User</td>
+    <td>Operations</td>
+  </tr>
+  </thead>
+  <tbody>
+  {% for vv in v %}
+  <tr>
+    <td>{{ vv.creator.username }}</td>
+    <td>
+      <a href="{{settings.BASE_SITE}}{{vv.video_path}}" target="cslt_preview_video">View video</a> |
+      <a href="{{settings.BASE_SITE}}{{vv.video_path}}" download>Download video</a>
+    </td>
+  </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% endfor %}
+{% endblock %}
