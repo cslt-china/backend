@@ -1,6 +1,4 @@
 import time
-import random
-import logging
 
 from django.http import HttpResponse
 from rest_framework import views
@@ -443,7 +441,7 @@ class UploadView(views.APIView):
       try:
         vs.save()
       except Exception as e:
-        resp = build_resp(code=400, message=_(e.args[0]))
+        resp = build_resp(code=400, message=e.args[0])
         return Response(resp)
 
       update_video_and_gloss_by_new_upload(video, vs.validated_data['video'],
@@ -654,4 +652,3 @@ class StatisticView(views.APIView):
     score = Score.objects.get(pk=1)
     score.value += 1
     score.save()
-

@@ -21,6 +21,7 @@ Jinja2==2.10.1
 lazy-object-proxy==1.4.1
 MarkupSafe==1.1.1
 mccabe==0.6.1
+mysqlclient==1.4.2.post1
 prometheus-client==0.4.2
 protobuf==3.9.0
 pyasn1==0.4.5
