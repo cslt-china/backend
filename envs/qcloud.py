@@ -20,21 +20,23 @@ LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
     'handlers': {
-        'console': {
-            'class': 'logging.StreamHandler'
+        'file': {
+            'level': 'DEBUG',
+            'class': 'logging.FileHandler',
+            'filename': '/app/logs/debug.log',
         },
     },
     'loggers': {
         '': {  # 'catch all' loggers by referencing it with the empty string
-            'handlers': ['console'],
+            'handlers': ['file'],
             'level': 'INFO',
         },
     },
 }
 
-DEBUG = False
+DEBUG = os.getenv('CSLT_DEBUG', False)
 
 TARGET_TRAINING_COUNT = 50
-PENDING_APPROVAL_LIMIT = 100000
-MINIMUM_REVIEWS = 3
-
+PENDING_APPROVAL_LIMIT = 10
+MINIMUM_REVIEWS = 5
+ONE_GLOSS_RECORDING_LIMIT = 2
