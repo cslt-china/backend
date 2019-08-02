@@ -87,7 +87,7 @@ DATABASES = {
     'USER': config.MYSQL_USER,
     'PASSWORD': config.MYSQL_PWD,
     'HOST': config.MYSQL_HOST,
-    'PORT': 8501
+    'PORT': 3306
   }
 }
 
