@@ -1,13 +1,14 @@
+import logging
 import os.path
 import uuid
 
-from django.contrib.auth.models import User
 from django.core.files.base import ContentFile
 from rest_framework import serializers
 import datetime
 from cslt import settings
 from django.core.files.storage import default_storage
 
+logger = logging.getLogger(__name__)
 
 def get_upload_url(file_name):
   ext = os.path.splitext(file_name)
@@ -15,7 +16,6 @@ def get_upload_url(file_name):
   dir = os.path.join(datetime.date.today().strftime('%Y-%m'))
   name = str(uuid.uuid4())
   return os.path.join(dir, name + ext[1])
-
 
 class SimpleCategorySerializer(serializers.Serializer):
   id = serializers.IntegerField()
@@ -25,19 +25,6 @@ class SimpleCategorySerializer(serializers.Serializer):
 class SimpleUserSerializer(serializers.Serializer):
   id = serializers.IntegerField()
   username = serializers.CharField()
-
-
-class UserSerializer(serializers.ModelSerializer):
-  password = serializers.CharField(write_only=True)
-
-  class Meta:
-    model = User
-
-  def create(self, validated_data):
-    user = super(UserSerializer, self).create(validated_data)
-    user.set_password(validated_data['password'])
-    user.save()
-    return user
 
 
 class SimpleVideoSerializer(serializers.Serializer):
@@ -70,20 +57,28 @@ class VideoUploadSerializer(serializers.Serializer):
     video = validated_data['video']
 
     if video.content_type != 'video/mp4':
-      raise Exception('The uploaded file is not supported')
+      raise Exception('The uploaded file is not supported ' + video.content_type)
     file_path = get_upload_url(video.name)
-    path = default_storage.save(file_path, ContentFile(video.read()))
-    path = os.path.join(settings.MEDIA_URL, path)
-    self.validated_data['video'] = path
+    try:
+      path = default_storage.save(file_path, video)
+      path = os.path.join(settings.MEDIA_URL, path)
+      self.validated_data['video'] = path
 
+    except Exception as e:
+      logger.error(e)
 
     thumb = validated_data['thumbnail']
     if thumb.content_type != 'image/png':
       raise Exception('The uploaded file is not supported')
+
     file_path = get_upload_url(thumb.name)
-    path = default_storage.save(file_path, ContentFile(thumb.read()))
-    path = os.path.join(settings.MEDIA_URL, path)
-    self.validated_data['thumbnail'] = path
+    try:
+      path = default_storage.save(file_path, thumb)
+      path = os.path.join(settings.MEDIA_URL, path)
+      self.validated_data['thumbnail'] = path
+    except Exception as e:
+      logger.error(e)
+
     return self
 
   class Meta:
