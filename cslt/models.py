@@ -105,7 +105,7 @@ class Video(models.Model):
       choices=[(status, status.value) for status in VideoStatus])
 
   def __str__(self):
-    return '{} | {}'.format(self.gloss.text, self.user.name)
+    return '{} | {}'.format(self.gloss.text, self.user.username)
 
   class Meta:
     verbose_name = 'Video'

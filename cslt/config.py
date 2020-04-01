@@ -1,7 +1,7 @@
 import importlib
 import os
 
-env_config = os.getenv('CSLT_ENV', 'gae').lower()
+env_config = os.getenv('CSLT_ENV', 'local').lower()
 
 ENV = importlib.import_module('.' + env_config, 'envs')
 
@@ -16,9 +16,6 @@ PENDING_APPROVAL_VIDEO_LIMIT_PER_USER = int(os.getenv('CSLT_PENDING_APPROVAL_LIM
                                                   ENV.PENDING_APPROVAL_LIMIT))
 REVIEW_MINIMUM_TURNOUT = int(os.getenv('CSLT_MINIMUM_REVIEWS', ENV.MINIMUM_REVIEWS))
 ONE_GLOSS_RECORDING_LIMIT = int(os.getenv('ONE_GLOSS_RECORDING_LIMIT', ENV.ONE_GLOSS_RECORDING_LIMIT))
-
-# For exporting Prometheus metrics.
-PROMETHEUS_PORT = os.getenv('CSLT_PROMETHEUS_PORT', 8000)
 
 STATIC_URL = ENV.STATIC_URL
 MEDIA_ROOT = ENV.MEDIA_ROOT

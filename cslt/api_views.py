@@ -6,7 +6,6 @@ from rest_framework.response import Response
 from django.db.models import Q, Sum, Count
 from rest_framework.parsers import MultiPartParser, FormParser
 from django.utils.translation import ugettext_lazy as _
-from prometheus_client import start_http_server, generate_latest, Counter, Gauge, Histogram
 
 from cslt import services, config
 from cslt.models import Category, Video, Score, VideoStatus, Gloss, ScoreType, \
@@ -21,24 +20,13 @@ from cslt.services import update_video_and_gloss_by_new_upload
 
 from cslt.utils import Convert
 
-
 logger = logging.getLogger(__name__)
 
 COMMON_URL_ERROR = {'code': 404, 'message': _('Not Found')}
 
-# A counter to count the total number of HTTP requests
-METRIC_REQUESTS = Counter('http_requests_total', 'Total HTTP Requests (count)',
-                          ['method', 'endpoint'])
-
-# A gauge (i.e. goes up and down) to monitor the total number of in progress requests
-METRIC_IN_PROGRESS = Gauge('http_requests_inprogress', 'Number of in progress HTTP requests')
-
-# A histogram to measure the latency of the HTTP requests
-METRIC_TIMINGS = Histogram('http_request_duration_seconds', 'HTTP request latency (seconds)')
-
 UPLOAD_FORBIDDENED_VIDEO_STATUS = [
-    VideoStatus.SAMPLE, VideoStatus.APPROVED,
-    VideoStatus.DELETED, VideoStatus.FORBIDDEN]
+  VideoStatus.SAMPLE, VideoStatus.APPROVED,
+  VideoStatus.DELETED, VideoStatus.FORBIDDEN]
 
 
 def build_resp(data=None, code=0, message=None):
@@ -55,11 +43,7 @@ def build_resp(data=None, code=0, message=None):
 class TokenView(TokenViewBase):
   serializer_class = None
 
-  @METRIC_TIMINGS.time()
-  @METRIC_IN_PROGRESS.track_inprogress()
   def post(self, request, *args, **kwargs):
-    METRIC_REQUESTS.labels(method='POST', endpoint='api/auth/').inc()
-
     serializer = self.get_serializer(data=request.data)
 
     try:
@@ -86,56 +70,48 @@ class TokenRefreshView(TokenView):
   token if the refresh token is valid.
   """
   serializer_class = TokenRefreshSerializer
+
+
 # </editor-fold>
 
 
 # <editor-fold desc="account">
 class ChangePasswordView(views.APIView):
   """
-  An endpoint for changing password.
-  """
-  @METRIC_TIMINGS.time()
-  @METRIC_IN_PROGRESS.track_inprogress()
-  def put(self, request):
-    METRIC_REQUESTS.labels(method='GET', endpoint='api/account/password').inc()
+An endpoint for changing password.
+"""
 
+  def put(self, request):
     user = self.request.user
     serializer = ChangePasswordSerializer(data=request.data)
 
     if serializer.is_valid():
-        # Check old password
-        old_password = serializer.data.get("old_password")
-        if not user.check_password(old_password):
-          resp = build_resp(
-            code=50103,
-            message=_('Wrong old password'))
-          return Response(resp)
-        # set_password also hashes the password that the user will get
-        user.set_password(serializer.data.get("new_password"))
-        user.save()
-        return Response(build_resp(code=0))
+      # Check old password
+      old_password = serializer.data.get("old_password")
+      if not user.check_password(old_password):
+        resp = build_resp(
+          code=50103,
+          message=_('Wrong old password'))
+        return Response(resp)
+      # set_password also hashes the password that the user will get
+      user.set_password(serializer.data.get("new_password"))
+      user.save()
+      return Response(build_resp(code=0))
 
     return Response(build_resp(code=500, message=_('Error occurred')))
 
 
 class AuthMediaView(views.APIView):
-  @METRIC_TIMINGS.time()
-  @METRIC_IN_PROGRESS.track_inprogress()
   def get(self, request, path):
-    METRIC_REQUESTS.labels(method='GET', endpoint='api/media/').inc()
-
     response = HttpResponse()
     response["Content-Disposition"] = "attachment; filename={0}".format(
-        path.split('/')[-1])
+      path.split('/')[-1])
     response['X-Accel-Redirect'] = "/media/{0}".format(path)
     return response
 
 
 class AgreementView(views.APIView):
-  @METRIC_TIMINGS.time()
-  @METRIC_IN_PROGRESS.track_inprogress()
   def post(self, request):
-    METRIC_REQUESTS.labels(method='POST', endpoint='api/account/agreement').inc()
     logger.info('user [%s] has agree with the agreements' % request.user.username)
     resp = {
       'code': 0
@@ -143,39 +119,33 @@ class AgreementView(views.APIView):
 
     return Response(resp)
 
-  @METRIC_TIMINGS.time()
-  @METRIC_IN_PROGRESS.track_inprogress()
   def get(self, request):
-    METRIC_REQUESTS.labels(method='GET', endpoint='api/account/agreement').inc()
-
     return Response({
       'code': 0,
       'data': '/static/agreements/' + request.user.username + '-agreement.pdf'
     })
+
+
 # </editor-fold>
 
 
 # <editor-fold desc="category">
 class CategoryView(views.APIView):
   """
-  Get categories or single category information.
+Get categories or single category information.
 
-  list:
-  return root categories list.
-  Example:
-    /api/categories
+list:
+return root categories list.
+Example:
+  /api/categories
 
-  get:
-  Get one category details.
-  Example:
-    /api/categories/1
-  """
+get:
+Get one category details.
+Example:
+  /api/categories/1
+"""
 
-  @METRIC_TIMINGS.time()
-  @METRIC_IN_PROGRESS.track_inprogress()
   def get(self, request, id=None):
-    METRIC_REQUESTS.labels(method='GET', endpoint='api/categories/').inc()
-
     if not id:
       categories = Category.objects.filter(parent_id=0).order_by('seq')
       serializer = CategorySerializer(categories, many=True)
@@ -194,14 +164,13 @@ class CategoryView(views.APIView):
     }
 
     return Response(resp)
+
+
 # </editor-fold>
 
 
 class DictionaryView(views.APIView):
-  @METRIC_TIMINGS.time()
-  @METRIC_IN_PROGRESS.track_inprogress()
   def get(self, request):
-    METRIC_REQUESTS.labels(method='GET', endpoint='api/dictionary/').inc()
     glosses = Gloss.objects.filter(gloss_type=GlossType.SINGLE_WORD)
 
     qs = request.GET
@@ -236,10 +205,7 @@ class DictionaryView(views.APIView):
 
 
 class GlossView(views.APIView):
-  @METRIC_TIMINGS.time()
-  @METRIC_IN_PROGRESS.track_inprogress()
   def get(self, request, order=None):
-    METRIC_REQUESTS.labels(method='GET', endpoint='api/glosses/').inc()
     glosses = Gloss.objects
 
     qs = request.GET
@@ -279,44 +245,41 @@ class GlossView(views.APIView):
 
 # <editor-fold desc="video">
 class VideoView(views.APIView):
-  @METRIC_TIMINGS.time()
-  @METRIC_IN_PROGRESS.track_inprogress()
   def get(self, request, id=None):
     """
-    Get videos or single video information.
+Get videos or single video information.
 
-    list:
+list:
 
-    return paged video entries with filters of request get params.
-      filters:
-        * author ( user id, special value: self,
-                   if null the api will return a list without self video. )
-        * query ( any text in gloss label )
-        * categories ( comma separated numbers, categories id )
-        * offset ( the result offset to start shown )
-        * limit ( the list maximum length )
+return paged video entries with filters of request get params.
+  filters:
+    * author ( user id, special value: self,
+               if null the api will return a list without self video. )
+    * query ( any text in gloss label )
+    * categories ( comma separated numbers, categories id )
+    * offset ( the result offset to start shown )
+    * limit ( the list maximum length )
 
-    Example:
-      /api/videos
-      /api/videos?author=self
-      /api/videos?author=1&limit=10
+Example:
+  /api/videos
+  /api/videos?author=self
+  /api/videos?author=1&limit=10
 
-    get:
+get:
 
-    Get one video details. The id field is a uuid, each video has a uuid field
-    to identify the video.
+Get one video details. The id field is a uuid, each video has a uuid field
+to identify the video.
 
-    Example:
-      /api/videos/c212f20c-5734-4e27-880c-e5469164dd7d
+Example:
+  /api/videos/c212f20c-5734-4e27-880c-e5469164dd7d
 
-    Args:
-      request:
-      id:
+Args:
+  request:
+  id:
 
-    Returns:
+Returns:
 
-    """
-    METRIC_REQUESTS.labels(method='GET', endpoint='api/videos/').inc()
+"""
     if id and id not in ['self', 'unreviewed']:
       try:
         video = Video.objects.get(uuid=id)
@@ -360,25 +323,22 @@ class VideoView(views.APIView):
 
     return Response(resp)
 
-  @METRIC_TIMINGS.time()
-  @METRIC_IN_PROGRESS.track_inprogress()
   def post(self, request):
     """
-    Create new video entry.
+Create new video entry.
 
-    post:
-      {
-        "gloss_id": number|number list
-      }
-      return video uuid|uuid list (named "upload_key"), you can use this uuid to
-      get video info, or upload video.
-    Args:
-      request:
+post:
+  {
+    "gloss_id": number|number list
+  }
+  return video uuid|uuid list (named "upload_key"), you can use this uuid to
+  get video info, or upload video.
+Args:
+  request:
 
-    Returns:
+Returns:
 
-    """
-    METRIC_REQUESTS.labels(method='POST', endpoint='api/videos/').inc()
+"""
     try:
       if type(request.data['gloss_id']) == int:
         glosses = [request.data['gloss_id']]
@@ -399,23 +359,20 @@ class VideoView(views.APIView):
 class UploadView(views.APIView):
   parser_classes = (MultiPartParser, FormParser)
 
-  @METRIC_TIMINGS.time()
-  @METRIC_IN_PROGRESS.track_inprogress()
   def post(self, request, id):
     """
-    Upload video file server.
+Upload video file server.
 
-    This api needs multipart/form-data form post, the file field is named 'file'.
-    The upload file type only supports 'video/mp4'.
+This api needs multipart/form-data form post, the file field is named 'file'.
+The upload file type only supports 'video/mp4'.
 
-    Examples:
-      /api/videos/b2121b40-7c21-486f-b8a5-8dd91f5b80a8/upload
-      Content-Disposition: form-data; name="video"; filename="video.mp4"
-      Content-Type: video/mp4
-      Content-Disposition: form-data; name="thumbnail"; filename="thumbnail.png"
-      Content-Type: image/png
-    """
-    METRIC_REQUESTS.labels(method='POST', endpoint='api/videos/<slug:id>/upload').inc()
+Examples:
+  /api/videos/b2121b40-7c21-486f-b8a5-8dd91f5b80a8/upload
+  Content-Disposition: form-data; name="video"; filename="video.mp4"
+  Content-Type: video/mp4
+  Content-Disposition: form-data; name="thumbnail"; filename="thumbnail.png"
+  Content-Type: image/png
+"""
     try:
       video = Video.objects.get(uuid=id)
     except Video.DoesNotExist:
@@ -424,13 +381,13 @@ class UploadView(views.APIView):
     user_id = request.user.id
     if video.user_id != user_id:
       resp = build_resp(
-          code=50070, message=_('No permission to upload this video'))
+        code=50070, message=_('No permission to upload this video'))
       return Response(resp)
 
     if video.status in UPLOAD_FORBIDDENED_VIDEO_STATUS:
       resp = build_resp(
-          code=50071,
-          message=_('Invalid upload, The video has been forbidden/deleted'))
+        code=50071,
+        message=_('Invalid upload, The video has been forbidden/deleted'))
       return Response(resp)
 
     request.data['user_id'] = user_id
@@ -460,14 +417,13 @@ class UploadView(views.APIView):
     else:
       resp = build_resp(code=500, message=_('Error occurred'))
       return Response(resp)
+
+
 # </editor-fold>
 
 
 class ScoreView(views.APIView):
-  @METRIC_TIMINGS.time()
-  @METRIC_IN_PROGRESS.track_inprogress()
   def get(self, request):
-    METRIC_REQUESTS.labels(method='GET', endpoint='api/review/').inc()
     score_values = [{
       'label': 'review video', 'value': 1
     }, {
@@ -483,10 +439,7 @@ class ScoreView(views.APIView):
     }]
     return Response(build_resp(score_values))
 
-  @METRIC_TIMINGS.time()
-  @METRIC_IN_PROGRESS.track_inprogress()
   def post(self, request, uuid, action=None):
-    METRIC_REQUESTS.labels(method='POST', endpoint='api/review/').inc()
     try:
       video = Video.objects.get(uuid=uuid)
     except Video.DoesNotExist:
@@ -542,11 +495,7 @@ class ScoreView(views.APIView):
 
 
 class ProfileView(views.APIView):
-
-  @METRIC_TIMINGS.time()
-  @METRIC_IN_PROGRESS.track_inprogress()
   def get(self, request):
-    METRIC_REQUESTS.labels(method='GET', endpoint='api/profile/').inc()
     data = {
       'id': request.user.id,
       'username': request.user.username,
@@ -558,17 +507,18 @@ class ProfileView(views.APIView):
 
 class BunchView(views.APIView):
   """
-  BunchView provides recording tasks to users.
+BunchView provides recording tasks to users.
 
-   Note that there are two types of users, and their recording tasks
-    are distributed differently:
-   - Reference video recording user: Can record glosses that has no reference video only,
-     and can record without limit continuously
-   - Training video recording user: Can only record glosses when their pending_approval
-     videos are below a limit. This is to ensure training videos are timely verified
-     before next recording tasks. We intend to keep the recording-review-correction loop
-     small in quantity and time.
-  """
+ Note that there are two types of users, and their recording tasks
+  are distributed differently:
+ - Reference video recording user: Can record glosses that has no reference video only,
+   and can record without limit continuously
+ - Training video recording user: Can only record glosses when their pending_approval
+   videos are below a limit. This is to ensure training videos are timely verified
+   before next recording tasks. We intend to keep the recording-review-correction loop
+   small in quantity and time.
+"""
+
   def _getUserPendingApprovalVideoCount(self, user):
     qs = {'author': 'self', 'offset': [0], 'limit': [10000]}
     data, next_offset, total = services.get_videos(user, qs, status=VideoStatus.PENDING_APPROVAL)
@@ -609,7 +559,8 @@ class BunchView(views.APIView):
 
     glosses_map = {k.id: k for v, k in enumerate(glosses)}
 
-    gloss_ids = Video.objects.filter(gloss_id__in=[gloss.id for gloss in glosses], user_id=request_user.id).values('gloss_id').annotate(video_count=Count('gloss_id'))
+    gloss_ids = Video.objects.filter(gloss_id__in=[gloss.id for gloss in glosses], user_id=request_user.id).values(
+      'gloss_id').annotate(video_count=Count('gloss_id'))
 
     for item in gloss_ids:
       if item['video_count'] > config.ONE_GLOSS_RECORDING_LIMIT:
@@ -625,10 +576,7 @@ class BunchView(views.APIView):
 
     return glosses
 
-  @METRIC_TIMINGS.time()
-  @METRIC_IN_PROGRESS.track_inprogress()
   def get(self, request):
-    METRIC_REQUESTS.labels(method='GET', endpoint='api/bunch/').inc()
     user_id = request.user.id
 
     if self._isReferenceCreator(user_id):
@@ -644,11 +592,7 @@ class BunchView(views.APIView):
 
 
 class StatisticView(views.APIView):
-
-  @METRIC_TIMINGS.time()
-  @METRIC_IN_PROGRESS.track_inprogress()
   def get(self, request):
-    METRIC_REQUESTS.labels(method='GET', endpoint='api/profile/statics').inc()
     score = Score.objects.get(pk=1)
     score.value += 1
     score.save()
